@@ -1,7 +1,0 @@
-/home/filipe/projects/FanControl/build/CMakeFiles/install/strip.dir
-/home/filipe/projects/FanControl/build/CMakeFiles/install/local.dir
-/home/filipe/projects/FanControl/build/CMakeFiles/install.dir
-/home/filipe/projects/FanControl/build/CMakeFiles/list_install_components.dir
-/home/filipe/projects/FanControl/build/CMakeFiles/rebuild_cache.dir
-/home/filipe/projects/FanControl/build/CMakeFiles/edit_cache.dir
-/home/filipe/projects/FanControl/build/CMakeFiles/FanControl.dir
