@@ -7,6 +7,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <thread>
+#include <algorithm>
+#include <cctype>
 
 void Backend::Configure()
 {
@@ -142,6 +144,13 @@ void Backend::Configure()
         std::string response = sendPostRequest(url, json_data);
         res.set_content(response, "application/json"); });
 
+  // Get CPU-Temp
+    svr->Get("/CPU/Temp", [&](const httplib::Request &req, httplib::Response &res)
+           {
+            std::string response = exec("/root/git/CheckTemp.sh");
+            std::string json = ParseSensorInfo(response);
+    res.set_content(json, "application/json"); });
+
   std::cout << "Starting http server at : http://" << ip.c_str() << ":80"
             << std::endl;
 
@@ -195,37 +204,68 @@ std::string Backend::FetchAirconSensorInfo()
   return json;
 }
 
+// Function to remove all occurrences of a character from a string
+std::string Backend::removeChar(const std::string& str, char charToRemove) {
+    std::string result = str;
+    result.erase(std::remove(result.begin(), result.end(), charToRemove), result.end());
+    return result;
+}
+
+// Function to trim whitespace from both ends of a string
+std::string Backend::trim(const std::string &str) {
+    size_t start = str.find_first_not_of(" \t\n\r\f\v");
+    size_t end = str.find_last_not_of(" \t\n\r\f\v");
+    return (start == std::string::npos || end == std::string::npos) ? "" : str.substr(start, end - start + 1);
+}
+
 std::string Backend::ParseSensorInfo(const std::string &sensor_info_str)
 {
-  std::stringstream ss;
-  ss << "{ ";
+    std::stringstream ss;
+    ss << "{ ";
 
-  // Example response:
-  // ret=OK,htemp=22.0,hhum=-,otemp=19.0,err=0,cmpfreq=0,mompow=1
-  std::istringstream iss(sensor_info_str);
-  std::string token;
-  while (std::getline(iss, token, ','))
-  {
-    // Split key-value pairs by '='
-    size_t pos = token.find('=');
-    if (pos != std::string::npos)
+    // Example response:
+    // ret=OK,htemp=22.0,hhum=-,otemp=19.0,err=0,cmpfreq=0,mompow=1
+    std::istringstream iss(sensor_info_str);
+    std::string token;
+    while (std::getline(iss, token, ','))
     {
-      std::string key = token.substr(0, pos);
-      std::string value = token.substr(pos + 1);
-      ss << "\"" << key << "\" : \"" << value << "\", ";
+        // Split key-value pairs by '='
+        size_t pos = token.find('=');
+        if (pos != std::string::npos)
+        {
+            std::string key = token.substr(0, pos);
+            std::string value = token.substr(pos + 1);
+
+            // Trim any whitespace from the value
+            value = trim(value);
+            
+            // Ensure the value is properly formatted for JSON
+            std::string formatted_value;
+            if (key == "htemp" || key == "otemp") {
+                formatted_value = "\"" + value + "°C\"";
+            } else {
+                formatted_value = "\"" + value + "\"";
+            }
+            
+            ss << "\"" << key << "\" : " << formatted_value << ", ";
+        }
     }
-  }
 
-  // Remove trailing comma and space
-  std::string json_str = ss.str();
-  if (!json_str.empty())
-  {
-    json_str = json_str.substr(0, json_str.size() - 2); // Remove last ", "
-  }
+    // Remove trailing comma and space
+    std::string json_str = ss.str();
+    if (!json_str.empty())
+    {
+        json_str = json_str.substr(0, json_str.size() - 2); // Remove last ", "
+    }
 
-  json_str += " }";
-  return json_str;
+    json_str += " }";
+
+    // Remove single quotes from the JSON string
+    json_str = removeChar(json_str, '\'');
+
+    return json_str;
 }
+
 
 size_t Backend::WriteCallback(void *contents, size_t size, size_t nmemb,
                               std::string *s)
@@ -310,4 +350,17 @@ std::string Backend::sendPostRequest(const std::string &url, const std::string &
 
   curl_global_cleanup();
   return readBuffer;
+}
+
+std::string Backend::exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
 }

@@ -12,9 +12,9 @@
     }
     .container {
       max-width: 600px;
-      margin: auto;
+      margin-bottom: 10px;
       background-color: #fff;
-      padding: 20px;
+      padding-top: 20px;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
@@ -99,7 +99,6 @@ padding-right: 20px;
     </div>
     <div id="error-box" class="error-box"></div>
   </div>
-
   <div class="container">
     <h1>Heating pump 1</h1>
     <div style="display: inline-flex; ">
@@ -107,6 +106,13 @@ padding-right: 20px;
     <div id="tempIn"></div>
    <div class="div-box"> <img style='width: 100%;' src="images/tempOut.png" alt=""></div>
     <div id="tempOut"></div>
+  </div>
+</div>
+
+  <div class="container">
+    <h1>System Info</h1>
+    <div style="display: inline-flex; ">
+    <div style="padding-left: 50px" id="cpuTemp"></div>
   </div>
   </div>
 
@@ -205,8 +211,8 @@ padding-right: 20px;
         .then((response) => response.json())
         .then((json) => {
           hideError();
-          const htemp = json.htemp; // Assuming the correct path in the JSON
-          const otemp = json.otemp; // Assuming the correct path in the JSON
+          const htemp = json.htemp;
+          const otemp = json.otemp;
           document.getElementById("tempOut").innerHTML = `Outside Temp: ${otemp}`;
           document.getElementById("tempIn").innerHTML = `Inside Temp: ${htemp}`;
         })
@@ -217,9 +223,23 @@ padding-right: 20px;
         });
     }
 
+    function updateCPUTemp() {
+      fetch("/CPU/Temp")
+      .then((response) => response.json())
+      .then((json) => {
+          const temp = json.temp; 
+          document.getElementById("cpuTemp").innerHTML = `CPU temp: ${temp}`;
+        })
+        .catch((error) => {
+          console.error("Error getting CpuTemp:", error);
+          showError("Connection failure while fetching CPUTemp");
+          setTimeout(updateCPUTemp(), 5000);
+        });
+    }
     // Initial update of LED statuses and heating pump status
     updateLEDs();
     updateHeatingPumpStatus();
+    updateCPUTemp();
     setTimeout(enableAllButtons, 100);
   </script>
 </body>

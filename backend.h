@@ -29,6 +29,9 @@ public:
 
   std::string ParseSensorInfo(const std::string &sensor_info_str);
   std::string sendPostRequest(const std::string &url, const std::string &json_data);
+  std::string exec(const char* cmd);
+  std::string removeChar(const std::string& str, char charToRemove);
+  std::string trim(const std::string &str);
 
 private:
   ModbusRelay *modbus_relay_;
