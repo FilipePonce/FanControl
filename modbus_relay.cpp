@@ -89,7 +89,7 @@ bool ModbusRelay::ReadCoil(int number)
 void ModbusRelay::SetRelay(bool relay1, bool relay2, bool relay3, bool relay4)
 {
   InternalSetRelay(false, false, false, false);
-  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
   InternalSetRelay(relay1, relay2, relay3, relay4);
 }
 

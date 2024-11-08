@@ -49,14 +49,14 @@ void Backend::Configure()
   svr->Get("/1", [&](const httplib::Request &req, httplib::Response &res)
            {
     last_speed_selection_ = 1;
-    modbus_relay_->SetRelay(true, true, false, false);
+    modbus_relay_->SetRelay(false, true, false, false);
 
     res.set_content(GetStatus(), "text/plain"); });
 
   svr->Get("/2", [&](const httplib::Request &req, httplib::Response &res)
            {
     last_speed_selection_ = 2;
-    modbus_relay_->SetRelay(false, false, true, false);
+    modbus_relay_->SetRelay(true, true, false, false);
 
     res.set_content(GetStatus(), "text/plain"); });
 

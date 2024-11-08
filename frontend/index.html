@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Relay Control</title>
+  <title>Relay and Light Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -49,7 +49,6 @@
     }
     .led-group {
       display: flex;
-      flex-wrap: wrap;
       justify-content: center;
       margin-top: 20px;
     }
@@ -66,6 +65,12 @@
     .led.off {
       background-color: #ccc;
     }
+    .status-text {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 1.2em;
+      color: #333;
+    }
     .error-box {
       background-color: #f8d7da;
       color: #721c24;
@@ -75,11 +80,11 @@
       margin-top: 20px;
       display: none;
     }
-.div-box {
-width: 30px;
-padding-left: 20px;
-padding-right: 20px;
-}
+    .div-box {
+    width: 30px;
+    padding-left: 20px;
+    padding-right: 20px;
+    }
   </style>
 </head>
 <body>
@@ -99,148 +104,222 @@ padding-right: 20px;
     </div>
     <div id="error-box" class="error-box"></div>
   </div>
+
   <div class="container">
-    <h1>Heating pump 1</h1>
-    <div style="display: inline-flex; ">
-   <div class="div-box"><img style='width: 100%;' src="images/tempIn.png" alt=""></div>
-    <div id="tempIn"></div>
-   <div class="div-box"> <img style='width: 100%;' src="images/tempOut.png" alt=""></div>
-    <div id="tempOut"></div>
+    <h1>Light Control</h1>
+    <div class="button-group">
+      <button onclick="toggleLight('on')">Turn ON</button>
+      <button onclick="toggleLight('off')">Turn OFF</button>
+    </div>
+    <div class="led-group">
+      <div id="light-led" class="led off"></div>
+    </div>
+    <div class="status-text" id="light-status-text">Loading light status...</div>
   </div>
-</div>
+
+  <div class="container">
+    <h1>Heating Pump 1</h1>
+    <div style="display: inline-flex;">
+      <div class="div-box"><img style='width: 100%;' src="images/tempIn.png" alt=""></div>
+      <div id="tempIn"></div>
+      <div class="div-box"><img style='width: 100%;' src="images/tempOut.png" alt=""></div>
+      <div id="tempOut"></div>
+    </div>
+  </div>
 
   <div class="container">
     <h1>System Info</h1>
-    <div style="display: inline-flex; ">
-    <div style="padding-left: 50px" id="cpuTemp"></div>
-  </div>
+    <div style="display: inline-flex;">
+      <div style="padding-left: 50px" id="cpuTemp"></div>
+    </div>
   </div>
 
   <script>
     let activeButton = null;
 
-    function toggleRelay(relay, button) {
-      disableAllButtons();
-      fetch("/" + relay)
-        .then((response) => response.json())
-        .then((data) => {
-          activeButton = button.id;
-          setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
-        })
-        .catch((error) => {
-          console.error("Error toggling relay " + relay + ":", error);
-          showError("Connection failure while toggling relay " + relay);
-          setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
-        });
-    }
+function toggleRelay(relay, button) {
+  disableAllButtons();
+  fetch("/" + relay)
+    .then((response) => response.json())
+    .then((data) => {
+      activeButton = button.id;
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    })
+    .catch((error) => {
+      console.error("Error toggling relay " + relay + ":", error);
+      showError("Connection failure while toggling relay " + relay);
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    });
+}
 
-    function toggleAllRelays(turnOn, button) {
-      disableAllButtons();
-      const action = turnOn ? "Set" : "Reset";
-      fetch("/" + action)
-        .then((response) => response.json())
-        .then((data) => {
-          activeButton = null;
-          setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
-        })
-        .catch((error) => {
-          console.error("Error toggling all relays:", error);
-          showError("Connection failure while toggling all relays");
-          setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
-        });
-    }
+function toggleAllRelays(turnOn, button) {
+  disableAllButtons();
+  const action = turnOn ? "Set" : "Reset";
+  fetch("/" + action)
+    .then((response) => response.json())
+    .then((data) => {
+      activeButton = null;
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    })
+    .catch((error) => {
+      console.error("Error toggling all relays:", error);
+      showError("Connection failure while toggling all relays");
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    });
+}
 
-    function disableAllButtons() {
-      const buttons = document.querySelectorAll(".button-group button");
-      buttons.forEach((btn) => {
-        btn.disabled = true;
-      });
-    }
+function disableAllButtons() {
+  const buttons = document.querySelectorAll(".button-group button");
+  buttons.forEach((btn) => {
+    btn.disabled = true;
+  });
+}
 
-    function enableAllButtons() {
-      const buttons = document.querySelectorAll(".button-group button");
-      buttons.forEach((btn) => {
-        if (activeButton == btn.id) {
-          btn.disabled = true;
-          return;
-        }
-        btn.disabled = false;
-      });
+function enableAllButtons() {
+  const buttons = document.querySelectorAll(".button-group button");
+  buttons.forEach((btn) => {
+    if (activeButton == btn.id) {
+      btn.disabled = true;
+      return;
     }
+    btn.disabled = false;
+  });
+}
 
-    function updateLEDs() {
-      fetch("/status")
-        .then((response) => response.json())
-        .then((json) => {
-          hideError();
-          updateLED("1", json.status.relay1);
-          updateLED("2", json.status.relay2);
-          updateLED("3", json.status.relay3);
-          updateLED("4", json.status.relay4);
-          activeButton = json.status.LastCommand;
-          setTimeout(updateLEDs, 500);
-        })
-        .catch((error) => {
-          console.error("Error getting status:", error);
-          showError("Connection failure while getting status");
-          setTimeout(updateLEDs, 5000);
-        });
-    }
+function updateLEDs() {
+  fetch("/status")
+    .then((response) => response.json())
+    .then((json) => {
+      hideError();
+      updateLED("1", json.status.relay1);
+      updateLED("2", json.status.relay2);
+      updateLED("3", json.status.relay3);
+      updateLED("4", json.status.relay4);
+      activeButton = json.status.LastCommand;
+      setTimeout(updateLEDs, 500);
+    })
+    .catch((error) => {
+      console.error("Error getting status:", error);
+      showError("Connection failure while getting status");
+      setTimeout(updateLEDs, 5000);
+    });
+}
 
-    function updateLED(relay, isOn) {
-      const led = document.getElementById("led" + relay);
-      if (led) {
-        led.classList.toggle("on", isOn === "1");
-        led.classList.toggle("off", isOn == "0");
-      }
-    }
+function updateLED(relay, isOn) {
+  const led = document.getElementById("led" + relay);
+  if (led) {
+    led.classList.toggle("on", isOn === "1");
+    led.classList.toggle("off", isOn == "0");
+  }
+}
 
-    function showError(message) {
-      const errorBox = document.getElementById("error-box");
-      errorBox.textContent = message;
-      errorBox.style.display = "block";
-    }
+function showError(message) {
+  const errorBox = document.getElementById("error-box");
+  errorBox.textContent = message;
+  errorBox.style.display = "block";
+}
 
-    function hideError() {
-      const errorBox = document.getElementById("error-box");
-      errorBox.style.display = "none";
-    }
+function hideError() {
+  const errorBox = document.getElementById("error-box");
+  errorBox.style.display = "none";
+}
 
-    function updateHeatingPumpStatus() {
-      fetch("/aircon/get_sensor_info")
-        .then((response) => response.json())
-        .then((json) => {
-          hideError();
-          const htemp = json.htemp;
-          const otemp = json.otemp;
-          document.getElementById("tempOut").innerHTML = `Outside Temp: ${otemp}`;
-          document.getElementById("tempIn").innerHTML = `Inside Temp: ${htemp}`;
-        })
-        .catch((error) => {
-          console.error("Error getting heating pump status:", error);
-          showError("Connection failure while getting heating pump status");
-          setTimeout(updateHeatingPumpStatus, 5000);
-        });
-    }
+function updateHeatingPumpStatus() {
+  fetch("/aircon/get_sensor_info")
+    .then((response) => response.json())
+    .then((json) => {
+      hideError();
+      const htemp = json.htemp;
+      const otemp = json.otemp;
+      document.getElementById("tempOut").innerHTML = `Outside Temp: ${otemp}`;
+      document.getElementById("tempIn").innerHTML = `Inside Temp: ${htemp}`;
+    })
+    .catch((error) => {
+      console.error("Error getting heating pump status:", error);
+      showError("Connection failure while getting heating pump status");
+      setTimeout(updateHeatingPumpStatus, 5000);
+    });
+}
 
-    function updateCPUTemp() {
-      fetch("/CPU/Temp")
-      .then((response) => response.json())
-      .then((json) => {
-          const temp = json.temp; 
-          document.getElementById("cpuTemp").innerHTML = `CPU temp: ${temp}`;
-        })
-        .catch((error) => {
-          console.error("Error getting CpuTemp:", error);
-          showError("Connection failure while fetching CPUTemp");
-          setTimeout(updateCPUTemp(), 5000);
-        });
+function updateCPUTemp() {
+  fetch("/CPU/Temp")
+  .then((response) => response.json())
+  .then((json) => {
+      const temp = json.temp; 
+      document.getElementById("cpuTemp").innerHTML = `CPU temp: ${temp}`;
+    })
+    .catch((error) => {
+      console.error("Error getting CpuTemp:", error);
+      showError("Connection failure while fetching CPUTemp");
+      setTimeout(updateCPUTemp(), 5000);
+    });
+}
+// Initial update of LED statuses and heating pump status
+updateLEDs();
+updateHeatingPumpStatus();
+updateCPUTemp();
+setTimeout(enableAllButtons, 100);
+
+async function toggleLight(state) {
+  try {
+    const endpoint = state === 'on' ? '/Sonoff01/1' : '/Sonoff01/0';
+    
+    // Toggle the light status
+    await fetch(endpoint);
+
+    // Immediately fetch the updated status
+    const response = await fetch('/Sonoff01/Status');
+    const data = await response.json();
+    const status = data.data.switch;
+    
+    // Update the LED based on the new status
+    updateLightStatus(status);
+
+  } catch (error) {
+    showError('Error toggling light: ' + error);
+  }
+}
+
+
+
+async function getLightStatus() {
+  try {
+    const response = await fetch('/Sonoff01/Status');
+    const data = await response.json();
+    if (data && data.data && data.data.switch !== undefined) {
+      updateLightStatus(data.data.switch);
+    } else {
+      throw new Error("Unexpected response format");
     }
-    // Initial update of LED statuses and heating pump status
-    updateLEDs();
-    updateHeatingPumpStatus();
-    updateCPUTemp();
-    setTimeout(enableAllButtons, 100);
+  } catch (error) {
+    showError('Error fetching light status: ' + error.message);
+    console.error(error); // Log error for debugging
+  }
+}
+
+function updateLightStatus(status) {
+  const led = document.getElementById('light-led');
+  const statusText = document.getElementById('light-status-text');
+  if (status === 'on') {
+    led.classList.add('on');
+    led.classList.remove('off');
+    statusText.textContent = "Light is ON";
+  } else if (status === 'off') {
+    led.classList.add('off');
+    led.classList.remove('on');
+    statusText.textContent = "Light is OFF";
+  } else {
+    showError('Invalid light status: ' + status);
+  }
+}
+
+// Initializing on page load
+window.onload = () => {
+  getLightStatus();
+  updateHeatingPumpStatus();
+  updateCPUTemp();
+  updateLEDs();
+};
   </script>
 </body>
 </html>
