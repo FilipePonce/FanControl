@@ -106,16 +106,29 @@
   </div>
 
   <div class="container">
-    <h1>Light Control</h1>
+    <h1>Light Control 01</h1>
     <div class="button-group">
-      <button onclick="toggleLight('on')">Turn ON</button>
-      <button onclick="toggleLight('off')">Turn OFF</button>
+      <button onclick="toggleLight('on', '01')">Turn ON</button>
+      <button onclick="toggleLight('off', '01')">Turn OFF</button>
     </div>
     <div class="led-group">
-      <div id="light-led" class="led off"></div>
+      <div id="light-led-01" class="led off"></div>
     </div>
-    <div class="status-text" id="light-status-text">Loading light status...</div>
+    <div class="status-text" id="light-status-text-01">Loading light status...</div>
   </div>
+  
+  <div class="container">
+    <h1>Light Control 02</h1>
+    <div class="button-group">
+      <button onclick="toggleLight('on', '02')">Turn ON</button>
+      <button onclick="toggleLight('off', '02')">Turn OFF</button>
+    </div>
+    <div class="led-group">
+      <div id="light-led-02" class="led off"></div>
+    </div>
+    <div class="status-text" id="light-status-text-02">Loading light status...</div>
+  </div>
+  
 
   <div class="container">
     <h1>Heating Pump 1</h1>
@@ -260,66 +273,66 @@ updateHeatingPumpStatus();
 updateCPUTemp();
 setTimeout(enableAllButtons, 100);
 
-async function toggleLight(state) {
+async function toggleLight(state, controlId) {
   try {
-    const endpoint = state === 'on' ? '/Sonoff01/1' : '/Sonoff01/0';
+    const endpoint = state === 'on' ? `/Sonoff${controlId}/1` : `/Sonoff${controlId}/0`;
     
     // Toggle the light status
     await fetch(endpoint);
 
     // Immediately fetch the updated status
-    const response = await fetch('/Sonoff01/Status');
+    const response = await fetch(`/Sonoff${controlId}/Status`);
     const data = await response.json();
     const status = data.data.switch;
     
     // Update the LED based on the new status
-    updateLightStatus(status);
+    updateLightStatus(status, controlId);
 
   } catch (error) {
-    showError('Error toggling light: ' + error);
+    showError(`Error toggling light ${controlId}: ${error}`);
   }
 }
 
-
-
-async function getLightStatus() {
+async function getLightStatus(controlId) {
   try {
-    const response = await fetch('/Sonoff01/Status');
+    const response = await fetch(`/Sonoff${controlId}/Status`);
     const data = await response.json();
     if (data && data.data && data.data.switch !== undefined) {
-      updateLightStatus(data.data.switch);
+      updateLightStatus(data.data.switch, controlId);
     } else {
       throw new Error("Unexpected response format");
     }
   } catch (error) {
-    showError('Error fetching light status: ' + error.message);
+    showError(`Error fetching light ${controlId} status: ${error.message}`);
     console.error(error); // Log error for debugging
   }
 }
 
-function updateLightStatus(status) {
-  const led = document.getElementById('light-led');
-  const statusText = document.getElementById('light-status-text');
+function updateLightStatus(status, controlId) {
+  const led = document.getElementById(`light-led-${controlId}`);
+  const statusText = document.getElementById(`light-status-text-${controlId}`);
   if (status === 'on') {
     led.classList.add('on');
     led.classList.remove('off');
-    statusText.textContent = "Light is ON";
+    statusText.textContent = `Light ${controlId} is ON`;
   } else if (status === 'off') {
     led.classList.add('off');
     led.classList.remove('on');
-    statusText.textContent = "Light is OFF";
+    statusText.textContent = `Light ${controlId} is OFF`;
   } else {
-    showError('Invalid light status: ' + status);
+    showError(`Invalid light ${controlId} status: ${status}`);
   }
 }
 
-// Initializing on page load
+// Initialize light status for both controls on page load
 window.onload = () => {
-  getLightStatus();
+  getLightStatus('01');
+  getLightStatus('02');
   updateHeatingPumpStatus();
   updateCPUTemp();
   updateLEDs();
 };
+
   </script>
 </body>
 </html>
