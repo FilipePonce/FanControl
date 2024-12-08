@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Light timers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <script src="scripts/global.js" defer></script>
+</head>
+<body>
+  <style>
+    #timeForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 20px;
+  width: 50%; /* Adjust width as needed */
+  background-color: #444; /* Background color for the form */
+  border-radius: 12px; /* Rounded corners */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); /* Shadow for depth */
+}
+
+#timeForm h1 {
+  font-size: 2em; /* Larger heading font */
+}
+
+label {
+  font-size: 1.5em; /* Larger label font */
+  display: block;
+  margin-bottom: 8px;
+}
+
+input[type="time"] {
+  font-size: 1.5em; /* Bigger input font */
+  padding: 10px;
+  width: 80%; /* Adjust width as needed */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #333;
+  color: #fff;
+}
+
+button[type="submit"] {
+  font-size: 1.5em; /* Bigger button font */
+  padding: 15px 30px;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+button[type="submit"]:hover {
+  background-color: #45a049;
+  transform: scale(1.05);
+}
+
+  </style>
+  <nav id="nav-placeholder"></nav>
+
+  <div class="container">
+    <h1>Garden lights timer</h1>
+    <form id="timeForm" onsubmit="setTimes(event)">
+      <div class="form-group">
+        <label for="onTime">On Time (HH:MM):</label>
+        <input type="time" id="onTime" required />
+      </div>
+      <div class="form-group">
+        <label for="offTime">Off Time (HH:MM):</label>
+        <input type="time" id="offTime" required />
+      </div>
+      <button type="submit">Set Times</button>
+    </form>
+    <div id="timeStatus" class="status-text">Set on and off times for the system.</div>
+    <div class="status-text" id="currentTimes">Fetching current times...</div>
+  </div>
+  <div id="footer-placeholder"></div>
+  <script>
+   async function setTimes(event) {
+      event.preventDefault(); // Prevent form submission
+  
+      const onTime = document.getElementById('onTime').value;
+      const offTime = document.getElementById('offTime').value;
+  
+      try {
+        // Set On Time
+        const onResponse = await fetch(`/on_time/${onTime}`);
+        const onData = await onResponse.json();
+        if (onData.status !== "success") throw new Error(onData.message);
+  
+        // Set Off Time
+        const offResponse = await fetch(`/off_time/${offTime}`);
+        const offData = await offResponse.json();
+        if (offData.status !== "success") throw new Error(offData.message);
+  
+        // Update Status
+        document.getElementById('timeStatus').textContent = `Times updated successfully! On: ${onTime}, Off: ${offTime}`;
+      } catch (error) {
+        document.getElementById('timeStatus').textContent = `Error: ${error.message}`;
+        console.error("Error setting times:", error);
+        showError("Error setting times");
+      }
+    }
+
+    async function fetchCurrentTimes() {
+  try {
+    const response = await fetch('/current_times');
+    hideError();
+    const data = await response.json();
+
+    if (data.on_time && data.off_time) {
+      // Update the current times display
+      document.getElementById('currentTimes').textContent =
+        `Current On Time: ${data.on_time}, Current Off Time: ${data.off_time}`;
+
+      // Prefill the input fields with the current values
+      document.getElementById('onTime').value = data.on_time;
+      document.getElementById('offTime').value = data.off_time;
+    } else {
+      throw new Error('Invalid response format');
+    }
+  } catch (error) {
+    document.getElementById('currentTimes').textContent =
+      'Error fetching current times.';
+    console.error('Error fetching current times:', error);
+    showError("Error fetching current times.");
+  }
+}
+
+// Initialize light status for both controls on page load
+window.onload = () => {
+  setTimeout(updateHeatingPumpStatus, 100);
+  setInterval(updateHeatingPumpStatus, 10000);
+  setInterval(updateSystemStatus, 1000);
+  setTimeout(fetchCurrentTimes, 300);
+};
+
+  </script>
+</body>
+</html>

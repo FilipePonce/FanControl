@@ -1,101 +1,138 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Relay Control</title>
+  <title>Fan Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .button-group button {
-      margin: 5px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      background-color: #2c2c36;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      width: 45%;
-    }
-    .button-group button:hover {
-      background-color: #6e706e;
-    }
-    .button-group button:disabled {
-      background-color: #aaa4a4;
-      cursor: not-allowed;
-    }
-    .led-group {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .led {
-      width: 20px;
-      height: 20px;
-      margin: 5px;
-      border-radius: 50%;
-      background-color: #ccc;
-    }
-    .led.on {
-      background-color: #4caf50;
-    }
-    .led.off {
-      background-color: #ccc;
-    }
-    .error-box {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-      padding: 10px;
-      border-radius: 4px;
-      margin-top: 20px;
-      display: none;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/global.css" />
+  <script src="scripts/global.js" defer></script>
 </head>
 <body>
+  <nav id="nav-placeholder"></nav>
+
   <div class="container">
     <h1>Fan Control</h1>
-    <!-- Navigation Container -->
-    <div id="navigation-container"></div>
-    <!-- Button Group -->
     <div class="button-group">
       <button id="1" onclick="toggleRelay(1, this);">Slow</button>
       <button id="2" onclick="toggleRelay(2, this);">Medium</button>
       <button id="3" onclick="toggleRelay(3, this);">High</button>
       <button onclick="toggleAllRelays(false, this);">Off</button>
     </div>
-    <!-- LED Group -->
     <div class="led-group">
       <div id="led1" class="led off"></div>
       <div id="led2" class="led off"></div>
       <div id="led3" class="led off"></div>
       <div id="led4" class="led off"></div>
     </div>
-    <!-- Error Box -->
-    <div id="error-box" class="error-box"></div>
   </div>
+  <div id="footer-placeholder"></div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('nav.html')
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to load navigation menu');
+          return response.text();
+        })
+        .then(data => {
+          document.getElementById('nav-placeholder').innerHTML = data;
+
+          // Highlight the current page link
+          const currentPage = window.location.pathname.split('/').pop(); // Get the current page name
+          const links = document.querySelectorAll('.nav-link');
+          links.forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+              link.classList.add('active');
+            }
+          });
+        })
+        .catch(error => console.error('Error loading navigation:', error));
+    });
+    
+let activeButton = null;
+
+function toggleRelay(relay, button) {
+  disableAllButtons();
+  fetch("/" + relay)
+    .then((response) => response.json())
+    .then((data) => {
+      hideError();
+      activeButton = button.id;
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    })
+    .catch((error) => {
+      console.error("Error toggling relay " + relay + ":", error);
+      showError("Connection failure while toggling relay " + relay);
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    });
+}
+
+function toggleAllRelays(turnOn, button) {
+  disableAllButtons();
+  const action = turnOn ? "Set" : "Reset";
+  fetch("/" + action)
+    .then((response) => response.json())
+    .then((data) => {
+      activeButton = null;
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    })
+    .catch((error) => {
+      console.error("Error toggling all relays:", error);
+      showError("Connection failure while toggling all relays");
+      setTimeout(enableAllButtons, 3000); // Enable buttons after 3 seconds
+    });
+}
+
+function disableAllButtons() {
+  const buttons = document.querySelectorAll(".button-group button");
+  buttons.forEach((btn) => {
+    btn.disabled = true;
+  });
+}
+
+function enableAllButtons() {
+  const buttons = document.querySelectorAll(".button-group button");
+  buttons.forEach((btn) => {
+    if (activeButton == btn.id) {
+      btn.disabled = true;
+      return;
+    }
+    btn.disabled = false;
+  });
+}
+
+function updateLEDs() {
+  fetch("/status")
+    .then((response) => response.json())
+    .then((json) => {
+      hideError();
+      updateLED("1", json.status.relay1);
+      updateLED("2", json.status.relay2);
+      updateLED("3", json.status.relay3);
+      updateLED("4", json.status.relay4);
+      activeButton = json.status.LastCommand;
+      setTimeout(updateLEDs, 5000);
+    })
+    .catch((error) => {
+      showError("Connection failure while getting status");
+      setTimeout(updateLEDs, 5000);
+    });
+}
+
+function updateLED(relay, isOn) {
+  const led = document.getElementById("led" + relay);
+  if (led) {
+    led.classList.toggle("on", isOn === "1");
+    led.classList.toggle("off", isOn == "0");
+  }
+}
+
+window.onload = () => {
+  setTimeout(updateLEDs, 200);
+  setTimeout(enableAllButtons, 100);
+  setTimeout(updateHeatingPumpStatus, 100);
+  setInterval(updateHeatingPumpStatus, 10000);
+  setInterval(updateSystemStatus, 1000);
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #333;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+  }
+  .header {
+    position: sticky;
+    top: 0;
+    background-color: #444;
+    padding: 10px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 1000;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 20px auto;
+    background-color: #222;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  }
+  h1 {
+    text-align: center;
+    color: #fff;
+    font-size: 28px;
+  }
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .button-group button {
+    margin: 10px;
+    padding: 15px 30px;
+    font-size: 20px;
+    border: none;
+    background-color: #555;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+  .button-group button:hover {
+    background-color: #6e706e;
+    transform: scale(1.05);
+  }
+  .button-group button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  .led-group {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .led {
+    width: 30px;
+    height: 30px;
+    margin: 5px;
+    border-radius: 50%;
+    background-color: #444;
+    transition: background-color 0.3s;
+  }
+  .led.on {
+    background-color: #4caf50;
+  }
+  .led.off {
+    background-color: #444;
+  }
+  .status-text {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 1.4em;
+    color: #ccc;
+  }
+  .footer {
+    position: sticky;
+    bottom: 0;
+    background-color: #444;
+    padding: 10px;
+    text-align: center;
+    font-size: 16px;
+    z-index: 1000;
+  }
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: center;
+  width: 100%;
+}
+.navigation {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    background-color: #555;
+    padding: 10px;
+    border-bottom: 1px solid #444;
+  }
+  .navigation a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #fff;
+    font-size: 18px;
+  }
+  .navigation a:hover {
+    text-decoration: underline;
+  }
+  .navigation a.active {
+    font-weight: bold;
+    color: #4caf50;
+  }

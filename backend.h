@@ -8,16 +8,28 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <thread>
+#include <algorithm>
+#include <cctype>
+#include <atomic>
 
 #include "httplib.h"
 #include "modbus_relay.h"
+#include <nlohmann/json.hpp>
 
 class Backend
 {
 public:
   Backend(ModbusRelay *modbus_relay, httplib::Server *server)
-      : modbus_relay_(modbus_relay), svr(server) {}
-  ~Backend() { StopTimer(); }
+      : modbus_relay_(modbus_relay),
+       svr(server),
+       scheduler_running(true),
+       on_hour(6),
+       on_minute(0),
+       off_hour(0),
+       off_minute(0) {}
+
+  ~Backend() { StopServer(); }
   void Configure();
   void UpdateStatus();
 
@@ -32,6 +44,15 @@ public:
   std::string exec(const char* cmd);
   std::string removeChar(const std::string& str, char charToRemove);
   std::string trim(const std::string &str);
+  std::string getCurrentSystemTime();
+
+  void StartSonoffScheduler();
+  void StopSonoffScheduler();
+  void StartAdditionalSonoffScheduler();
+  void StopAdditionalSonoffScheduler(); 
+  void StopServer();
+  void saveSchedulerSettings(const std::string &filename);
+  void loadSchedulerSettings(const std::string &filename);
 
 private:
   ModbusRelay *modbus_relay_;
@@ -42,4 +63,16 @@ private:
   void StartTimer();
   void StopTimer();
   int last_speed_selection_ = 1;
+
+  std::atomic<bool> scheduler_running;
+  std::atomic<int> on_hour;
+  std::atomic<int> on_minute;
+  std::atomic<int> off_hour;
+  std::atomic<int> off_minute;
+
+  std::atomic<bool> additional_scheduler_running;
+  std::atomic<int> custom_on_hour;    
+  std::atomic<int> custom_on_minute; 
+  std::atomic<int> custom_off_hour; 
+  std::atomic<int> custom_off_minute;
 };

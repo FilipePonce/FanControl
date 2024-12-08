@@ -8,13 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find and include libmodbus
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBMODBUS REQUIRED libmodbus)
+include_directories(${LIBMODBUS_INCLUDE_DIRS})
 
 # Find libcurl
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
-
-# Include directories for libmodbus
-include_directories(${LIBMODBUS_INCLUDE_DIRS})
 
 # Set the output directories for binaries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/bin)
@@ -34,12 +32,6 @@ find_path(MOSQUITTO_INCLUDE_DIR mosquitto.h)
 find_library(MOSQUITTO_LIBRARY mosquitto)
 
 if (MOSQUITTO_INCLUDE_DIR AND MOSQUITTO_LIBRARY)
-    set(MOSQUITTO_FOUND TRUE)
-else ()
-    set(MOSQUITTO_FOUND FALSE)
-endif ()
-
-if (MOSQUITTO_FOUND)
     message(STATUS "Found Mosquitto: ${MOSQUITTO_LIBRARY}")
     include_directories(${MOSQUITTO_INCLUDE_DIR})
 else ()
@@ -47,7 +39,19 @@ else ()
 endif ()
 
 # Link libraries
-target_link_libraries(FanControl ${LIBMODBUS_LIBRARIES}  ${CURL_LIBRARY} ${MOSQUITTO_LIBRARY} pthread)
+target_link_libraries(FanControl
+    PRIVATE
+    ${LIBMODBUS_LIBRARIES}
+    ${CURL_LIBRARY}
+    ${MOSQUITTO_LIBRARY}
+    pthread
+)
+
+# Add the nlohmann/json library
+add_subdirectory(external/json)
+
+# Link the library to the FanControl target
+target_link_libraries(FanControl PRIVATE nlohmann_json::nlohmann_json)
 
 # Custom command to create a symlink to frontend files after build
 add_custom_command(TARGET FanControl POST_BUILD
@@ -60,4 +64,3 @@ add_custom_command(TARGET FanControl POST_BUILD
 install(TARGETS FanControl
     DESTINATION /usr/local/bin
 )
-
