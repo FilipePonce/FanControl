@@ -2,11 +2,10 @@
 
 void Backend::Configure()
 {
+  loadSchedulerSettings("scheduler_settings.json");
   StartTimer();
   StartSonoffScheduler();
   StartAdditionalSonoffScheduler();
-
-  loadSchedulerSettings("scheduler_settings.json");
 
   std::string ip = "0.0.0.0";
 
@@ -571,7 +570,7 @@ void Backend::StartSonoffScheduler()
             auto current_time = std::chrono::system_clock::to_time_t(now);
             auto local_time = *std::localtime(&current_time);
 
-            if (local_time.tm_hour == on_hour.load() && local_time.tm_min == (on_minute.load() - 1)) {
+            if (local_time.tm_hour == on_hour.load() && local_time.tm_min == on_minute.load()) {
                 std::cout << "Turning lights ON";
                 // Turn on Sonoff 1 and 2
                 this->sendPostRequest("http://192.168.1.101:8081/zeroconf/switch",
@@ -580,7 +579,7 @@ void Backend::StartSonoffScheduler()
                                       R"({"deviceid": "10011c493b", "data": {"switch": "on"}})");
                 std::this_thread::sleep_for(std::chrono::minutes(1)); // Avoid re-triggering within the same minute
             }
-            if (local_time.tm_hour == off_hour.load() && local_time.tm_min == (off_minute.load() - 1)) {
+            if (local_time.tm_hour == off_hour.load() && local_time.tm_min == off_minute.load()) {
                 // Turn off Sonoff 1 and 2
                 this->sendPostRequest("http://192.168.1.101:8081/zeroconf/switch",
                                       R"({"deviceid": "10011cc672", "data": {"switch": "off"}})");
@@ -611,13 +610,13 @@ void Backend::StartAdditionalSonoffScheduler() {
             auto local_time = *std::localtime(&current_time);
 
             // Custom logic for the 192.168.1.103 device
-            if (local_time.tm_hour == custom_on_hour.load() && local_time.tm_min == (custom_on_minute.load() - 1)) {
+            if (local_time.tm_hour == custom_on_hour.load() && local_time.tm_min == custom_on_minute.load()) {
                 std::cout << "Turning device at 192.168.1.103 ON\n";
                 this->sendPostRequest("http://192.168.1.103:8081/zeroconf/switch",
                                       R"({"deviceid": "10011c1234", "data": {"switch": "on"}})");
                 std::this_thread::sleep_for(std::chrono::minutes(1)); // Avoid re-triggering within the same minute
             }
-            if (local_time.tm_hour == custom_off_hour.load() && local_time.tm_min == (custom_off_minute.load() - 1)) {
+            if (local_time.tm_hour == custom_off_hour.load() && local_time.tm_min == custom_off_minute.load()) {
                 std::cout << "Turning device at 192.168.1.103 OFF\n";
                 this->sendPostRequest("http://192.168.1.103:8081/zeroconf/switch",
                                       R"({"deviceid": "10011c1234", "data": {"switch": "off"}})");
@@ -696,7 +695,6 @@ void Backend::loadSchedulerSettings(const std::string &filename) {
             custom_off_hour = json.value("custom_off_hour", 7);
             custom_off_minute = json.value("custom_off_minute", 0);
         } catch (const std::exception &e) {
-            std::cerr << "Error parsing scheduler settings from file: " << e.what() << std::endl;
         }
         file.close();
     } else {

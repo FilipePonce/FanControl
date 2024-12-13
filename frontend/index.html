@@ -55,11 +55,16 @@
   <script>
 // Initialize light status for both controls on page load
 window.onload = () => {
-  getLightStatus('01');
-  getLightStatus('02');
   setTimeout(updateHeatingPumpStatus, 100);
   setInterval(updateHeatingPumpStatus, 10000);
-  setInterval(updateSystemStatus, 1000);
+  updateSystemStatus();
+  getLightStatus('01');
+  getLightStatus('02');
+  setInterval(() => {
+    updateSystemStatus();
+    getLightStatus('01');
+    getLightStatus('02');
+  }, 2000);
 };
 
   </script>

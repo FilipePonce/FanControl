@@ -144,11 +144,15 @@ async function fetchCurrentTimes() {
 
 // Initialize light status for both controls on page load
 window.onload = () => {
-  getLightStatus('03');
   setTimeout(updateHeatingPumpStatus, 100);
   setInterval(updateHeatingPumpStatus, 10000);
-  setInterval(updateSystemStatus, 1000);
   setTimeout(fetchCurrentTimes, 300);
+  updateSystemStatus();
+  getLightStatus('03');
+  setInterval(() => {
+    updateSystemStatus();
+    getLightStatus('03');
+  }, 2000);
 };
 
   </script>
